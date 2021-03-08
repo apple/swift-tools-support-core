@@ -14,6 +14,7 @@ import var Foundation.NSLocalizedDescriptionKey
 
 #if os(Windows)
 import Foundation
+import WinSDK
 #endif
 
 @_implementationOnly import TSCclibc
@@ -326,9 +327,31 @@ public final class Process: ObjectIdentifierProtocol {
                 pathString: ProcessEnv.path,
                 currentWorkingDirectory: localFileSystem.currentWorkingDirectory
             )
+#if os(Windows)
+            var searchPaths = Array<AbsolutePath>()
+            var buffer = Array<WCHAR>(repeating: 0, count: Int(MAX_PATH + 1))
+
+            // The 32-bit Windows system directory
+            GetSystemDirectoryW(&buffer, .init(MAX_PATH + 1))
+            searchPaths.append(AbsolutePath(String(decodingCString: buffer, as: UTF16.self)))
+
+            // The 16-bit Windows system directory
+            if let systemDrive = ProcessEnv.vars["systemdrive"],
+               let systemPath = try? AbsolutePath(validating: "\(systemDrive))\\System") {
+                searchPaths.append(systemPath)
+            }
+
+            // The Windows directory
+            GetWindowsDirectoryW(&buffer, .init(MAX_PATH + 1))
+            searchPaths.append(AbsolutePath(String(decodingCString: buffer, as: UTF16.self)))
+
+            searchPaths.append(contentsOf: envSearchPaths)
+#else
+            let searchPaths = envSearchPaths
+#endif
             // Lookup and cache the executable path.
             let value = lookupExecutablePath(
-                filename: program, searchPaths: envSearchPaths)
+                filename: program, searchPaths: searchPaths)
             Process.validatedExecutablesMap[program] = value
             return value
         }

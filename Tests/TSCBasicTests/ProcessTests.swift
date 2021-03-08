@@ -71,12 +71,13 @@ class ProcessTests: XCTestCase {
     }
 
     func testFindExecutable() throws {
+      #if !os(Windows)
         try testWithTemporaryDirectory { tmpdir in
             // This process should always work.
-            XCTAssertTrue(Process.findExecutable("ls") != nil)
+            XCTAssertNotNil(Process.findExecutable("ls"))
 
-            XCTAssertEqual(Process.findExecutable("nonExistantProgram"), nil)
-            XCTAssertEqual(Process.findExecutable(""), nil)
+            XCTAssertNil(Process.findExecutable("nonExistantProgram"))
+            XCTAssertNil(Process.findExecutable(""))
 
             // Create a local nonexecutable file to test.
             let tempExecutable = tmpdir.appending(component: "nonExecutableProgram")
@@ -87,9 +88,40 @@ class ProcessTests: XCTestCase {
                 """)
 
             try withCustomEnv(["PATH": tmpdir.pathString]) {
-                XCTAssertEqual(Process.findExecutable("nonExecutableProgram"), nil)
+                XCTAssertNil(Process.findExecutable("nonExecutableProgram"))
             }
         }
+      #else
+        try testWithTemporaryDirectory { tmpdir in
+            // Test System32 without .exe suffix.
+            XCTAssertNotNil(Process.findExecutable("cmd"))
+            
+            // Test Windows with .exe suffix.
+            XCTAssertNotNil(Process.findExecutable("explorer.exe"))
+
+            // Test non-existant programs.
+            XCTAssertNil(Process.findExecutable("nonExistantProgram"))
+            XCTAssertNil(Process.findExecutable(""))
+
+            // Copy an executable file to test.
+            let tempExecutable = tmpdir.appending(component: "executableProgram.exe")
+            try localFileSystem.copy(from: Process.findExecutable("cmd")!, to: tempExecutable)
+
+            // Create a non-executable file to test.
+            let tempNonExecutable = tmpdir.appending(component: "program.bat")
+            try localFileSystem.writeFileContents(tempNonExecutable, bytes: """
+                @echo off
+                exit
+
+                """)
+
+            try withCustomEnv(["PATH": tmpdir.pathString]) {
+                XCTAssertNotNil(Process.findExecutable("executableProgram.exe"))
+                XCTAssertNotNil(Process.findExecutable("executableProgram"))
+                XCTAssertNil(Process.findExecutable("program.bat"))
+            }
+        }
+      #endif
     }
 
     func testNonExecutableLaunch() throws {
