@@ -109,7 +109,8 @@ public extension Version {
     ///
     /// - Parameters:
     ///   - string: The string to parse.
-    init?(string: String) {
+    ///   - lenient: Boolean indicating if partial strings should be parsed. Infers that strings without an explicit patch version have a patch version of zero. Defaults to false.   
+    init?(string: String, lenient: Bool = false) {
         let prereleaseStartIndex = string.firstIndex(of: "-")
         let metadataStartIndex = string.firstIndex(of: "+")
 
@@ -119,11 +120,15 @@ public extension Version {
             .split(separator: ".", maxSplits: 2, omittingEmptySubsequences: false)
             .map(String.init).compactMap({ Int($0) }).filter({ $0 >= 0 })
 
-        guard requiredComponents.count == 3 else { return nil }
+        guard requiredComponents.count == 3 || (requiredComponents.count == 2 && lenient) else { return nil }
 
         self.major = requiredComponents[0]
         self.minor = requiredComponents[1]
-        self.patch = requiredComponents[2]
+        if(requiredComponents.count == 3) {
+            self.patch = requiredComponents[2]
+        } else {
+            self.patch = 0
+        }
 
         func identifiers(start: String.Index?, end: String.Index) -> [String] {
             guard let start = start else { return [] }

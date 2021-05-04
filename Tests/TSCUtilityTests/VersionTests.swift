@@ -285,4 +285,11 @@ class VersionTests: XCTestCase {
             XCTAssertFalse(range.contains(version: "1.1.0-beta"))
         }
     }
+    
+    func testLenientParsing()
+    {
+        XCTAssertEqual(Version(string: "1.2", lenient: true), Version(string: "1.2.0"))
+        XCTAssertEqual(Version(string: "1", lenient: true), nil)
+        XCTAssertEqual(Version(string: "1.2", lenient: false), nil)
+    }
 }
