@@ -1,7 +1,7 @@
 /*
  This source file is part of the Swift.org open source project
 
- Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+ Copyright (c) 2014 - 2021 Apple Inc. and the Swift project authors
  Licensed under Apache License v2.0 with Runtime Library Exception
 
  See http://swift.org/LICENSE.txt for license information
@@ -377,7 +377,7 @@ private class LocalFileSystem: FileSystem {
     }
 
     func createSymbolicLink(_ path: AbsolutePath, pointingAt destination: AbsolutePath, relative: Bool) throws {
-        let destString = relative ? destination.relative(to: path.parentDirectory).pathString : destination.pathString
+        let destString = relative ? try destination.relative(to: path.parentDirectory).pathString : destination.pathString
         try FileManager.default.createSymbolicLink(atPath: path.pathString, withDestinationPath: destString)
     }
 
@@ -706,7 +706,7 @@ public class InMemoryFileSystem: FileSystem {
 
     /// Virtualized current working directory.
     public var currentWorkingDirectory: AbsolutePath? {
-        return AbsolutePath("/")
+        return AbsolutePath.withPOSIX(path: "/")
     }
 
     public func changeCurrentWorkingDirectory(to path: AbsolutePath) throws {
@@ -715,7 +715,7 @@ public class InMemoryFileSystem: FileSystem {
 
     public var homeDirectory: AbsolutePath {
         // FIXME: Maybe we should allow setting this when creating the fs.
-        return AbsolutePath("/home/user")
+        return AbsolutePath.withPOSIX(path: "/home/user")
     }
     
     public var cachesDirectory: AbsolutePath? {
@@ -803,7 +803,7 @@ public class InMemoryFileSystem: FileSystem {
                 throw FileSystemError(.alreadyExistsAtDestination, path)
             }
 
-            let destination = relative ? destination.relative(to: path.parentDirectory).pathString : destination.pathString
+            let destination = relative ? try destination.relative(to: path.parentDirectory).pathString : destination.pathString
 
             contents.entries[path.basename] = Node(.symlink(destination))
         }
@@ -981,11 +981,11 @@ public class RerootedFileSystemView: FileSystem {
 
     /// Adjust the input path for the underlying file system.
     private func formUnderlyingPath(_ path: AbsolutePath) -> AbsolutePath {
-        if path == AbsolutePath.root {
+        if path.isRoot {
             return root
         } else {
             // FIXME: Optimize?
-            return root.appending(RelativePath(String(path.pathString.dropFirst(1))))
+            return root.appending(RelativePath(path.filepath.removingRoot()))
         }
     }
 

@@ -1,7 +1,7 @@
 /*
  This source file is part of the Swift.org open source project
 
- Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+ Copyright (c) 2014 - 2021 Apple Inc. and the Swift project authors
  Licensed under Apache License v2.0 with Runtime Library Exception
 
  See http://swift.org/LICENSE.txt for license information
@@ -37,26 +37,26 @@ class WalkTests : XCTestCase {
       #if os(Android)
         let root = "/system"
         var expected = [
-            AbsolutePath("\(root)/usr"),
-            AbsolutePath("\(root)/bin"),
-            AbsolutePath("\(root)/xbin")
+            AbsolutePath.withPOSIX(path: "\(root)/usr"),
+            AbsolutePath.withPOSIX(path: "\(root)/bin"),
+            AbsolutePath.withPOSIX(path: "\(root)/xbin")
         ]
       #else
         let root = ""
         var expected = [
-            AbsolutePath("/usr"),
-            AbsolutePath("/bin"),
-            AbsolutePath("/sbin")
+            AbsolutePath.withPOSIX(path: "/usr"),
+            AbsolutePath.withPOSIX(path: "/bin"),
+            AbsolutePath.withPOSIX(path: "/sbin")
         ]
       #endif
-        for x in try! walk(AbsolutePath("\(root)/"), recursively: false) {
+        for x in try! walk(AbsolutePath.withPOSIX(path: "\(root)/"), recursively: false) {
             if let i = expected.firstIndex(of: x) {
                 expected.remove(at: i)
             }
           #if os(Android)
-            XCTAssertEqual(3, x.components.count)
-          #else
             XCTAssertEqual(2, x.components.count)
+          #else
+            XCTAssertEqual(1, x.components.count)
           #endif
         }
         XCTAssertEqual(expected.count, 0)
