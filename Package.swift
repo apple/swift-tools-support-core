@@ -40,7 +40,6 @@ let package = Package(
             name: "TSCTestSupport",
             targets: ["TSCTestSupport"]),
     ],
-    dependencies: [],
     targets: [
         
         // MARK: Tools support core targets
@@ -56,11 +55,21 @@ let package = Package(
         .target(
             /** TSCBasic support library */
             name: "TSCBasic",
-            dependencies: ["TSCLibc", "TSCclibc"]),
+            dependencies: [
+                "TSCLibc",
+                "TSCclibc",
+                .product(name: "OrderedCollections", package: "swift-collections"),
+            ]
+        ),
         .target(
             /** Abstractions for common operations, should migrate to TSCBasic */
             name: "TSCUtility",
-            dependencies: ["TSCBasic", "TSCclibc"]),
+            dependencies: [
+                "TSCBasic",
+                "TSCclibc",
+                .product(name: "OrderedCollections", package: "swift-collections"),
+            ]
+        ),
         
         // MARK: Additional Test Dependencies
         
@@ -86,6 +95,19 @@ let package = Package(
             dependencies: ["TSCUtility", "TSCTestSupport"]),
     ]
 )
+
+/// When not using local dependencies, the branch to use for llbuild and TSC repositories.
+let relatedDependenciesBranch = "main"
+
+if ProcessInfo.processInfo.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
+    package.dependencies += [
+        .package(url: "https://github.com/apple/swift-collections.git", .branch("main")),
+    ]
+} else {
+    package.dependencies += [
+        .package(path: "../swift-collections"),
+    ]
+}
 
 // FIXME: conditionalise these flags since SwiftPM 5.3 and earlier will crash
 // for platforms they don't know about.

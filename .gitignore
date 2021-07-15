@@ -6,3 +6,7 @@ xcuserdata/
 .swiftpm
 build
 .vscode
+
+CMakeCache.txt
+CMakeFiles
+Package.resolved

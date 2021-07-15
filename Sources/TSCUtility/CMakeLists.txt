@@ -46,6 +46,7 @@ add_library(TSCUtility
   misc.swift
 )
 target_link_libraries(TSCUtility PUBLIC
+  SwiftCollections::OrderedCollections
   TSCBasic)
 target_link_libraries(TSCUtility PRIVATE
   TSCclibc
